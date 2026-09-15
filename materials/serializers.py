@@ -9,9 +9,14 @@ class LessonSerializer(serializers.ModelSerializer):
 
 
 class CourseSerializer(serializers.ModelSerializer):
-    # Дополнительно: выведет список уроков внутри курса, если это необходимо
+    # Задание 1: Поле для подсчета количества уроков
+    lessons_count = serializers.SerializerMethodField()
+    # Задание 3: Вывод уроков через сериализатор связанной модели
     lessons = LessonSerializer(many=True, read_only=True)
 
     class Meta:
         model = Course
-        fields = "__all__"
+        fields = ['id', 'title', 'preview', 'description', 'lessons_count', 'lessons']
+
+    def get_lessons_count(self, obj):
+        return obj.lessons.count()  # Считаем количество уроков, связанных с курсом
