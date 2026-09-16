@@ -1,8 +1,9 @@
 from rest_framework import generics
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from users.models import Payment, User
+from users.permissions import IsProfileOwner
 from users.serializers import PaymentSerializer, UserSerializer, UserRegisterSerializer
 
 
@@ -18,6 +19,11 @@ class UserRegisterAPIView(generics.CreateAPIView):
 class UserUpdateAPIView(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+    def get_permissions(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return [IsAuthenticated(), IsProfileOwner()]  # Редактировать может только хозяин профиля
+        return [IsAuthenticated()]  # Смотреть общую инфу может любой вошедший
 
 
 class PaymentListAPIView(generics.ListAPIView):
