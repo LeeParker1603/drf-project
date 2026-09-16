@@ -10,7 +10,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         fields = ['email', 'password', 'phone', 'city']
 
     def create(self, validated_data):
-        # Метод create_user автоматически захеширует пароль
         return User.objects.create_user(**validated_data)
 
 
