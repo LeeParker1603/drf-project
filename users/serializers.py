@@ -2,6 +2,18 @@ from rest_framework import serializers
 from users.models import Payment, User
 
 
+class UserRegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only={'password': True})
+
+    class Meta:
+        model = User
+        fields = ['email', 'password', 'phone', 'city']
+
+    def create(self, validated_data):
+        # Метод create_user автоматически захеширует пароль
+        return User.objects.create_user(**validated_data)
+
+
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment

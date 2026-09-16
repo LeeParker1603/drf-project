@@ -17,7 +17,7 @@
     "fields": {
       "user": 1,
       "payment_date": "2026-03-05T15:20:00Z",
-      "paid_course": 2,
+      "paid_course": 3,
       "paid_lesson": null,
       "amount": "14500.00",
       "payment_method": "transfer"
@@ -30,7 +30,7 @@
       "user": 1,
       "payment_date": "2026-03-10T11:45:00Z",
       "paid_course": null,
-      "paid_lesson": 7,
+      "paid_lesson": 1,
       "amount": "1500.00",
       "payment_method": "cash"
     }
@@ -42,7 +42,7 @@
       "user": 1,
       "payment_date": "2026-03-12T18:30:00Z",
       "paid_course": null,
-      "paid_lesson": 5,
+      "paid_lesson": 2,
       "amount": "2000.00",
       "payment_method": "cash"
     }
