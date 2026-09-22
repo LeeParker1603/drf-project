@@ -38,3 +38,21 @@ class Lesson(models.Model):
     class Meta:
         verbose_name = "Урок"
         verbose_name_plural = "Уроки"
+
+
+class Subscription(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Пользователь", related_name="subscriptions")
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, verbose_name="Курс", related_name="subscriptions")
+
+    class Meta:
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+        # Гарантируем уникальность пары пользователь-курс
+        unique_together = ('user', 'course')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user} - {self.course.title}"
+

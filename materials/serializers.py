@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from materials.models import Course, Lesson
+from materials.models import Course, Lesson, Subscription
 from materials.validators import validate_youtube_link
 
 
@@ -13,9 +13,9 @@ class LessonSerializer(serializers.ModelSerializer):
 
 
 class CourseSerializer(serializers.ModelSerializer):
-    # Задание 1: Поле для подсчета количества уроков
+    # Поле для подсчета количества уроков
     lessons_count = serializers.SerializerMethodField()
-    # Задание 3: Вывод уроков через сериализатор связанной модели
+    # Вывод уроков через сериализатор связанной модели
     lessons = LessonSerializer(many=True, read_only=True)
 
     class Meta:
@@ -24,3 +24,9 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def get_lessons_count(self, obj):
         return obj.lessons.count()  # Считаем количество уроков, связанных с курсом
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Subscription.objects.filter(user=request.user, course=obj).exists()
+        return False
