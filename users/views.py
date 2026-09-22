@@ -21,8 +21,11 @@ class UserUpdateAPIView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
 
     def get_permissions(self):
-        if self.request.method in ['PUT', 'PATCH']:
-            return [IsAuthenticated(), IsProfileOwner()]  # Редактировать может только хозяин профиля
+        if self.request.method in ["PUT", "PATCH"]:
+            return [
+                IsAuthenticated(),
+                IsProfileOwner(),
+            ]  # Редактировать может только хозяин профиля
         return [IsAuthenticated()]  # Смотреть общую инфу может любой вошедший
 
 
@@ -34,8 +37,7 @@ class PaymentListAPIView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
 
     # Поля для фильтрации по курсу, уроку или способу оплаты
-    filterset_fields = ('paid_course', 'paid_lesson', 'payment_method')
+    filterset_fields = ("paid_course", "paid_lesson", "payment_method")
 
     # Поля для сортировки (по дате оплаты)
-    ordering_fields = ('payment_date',)
-
+    ordering_fields = ("payment_date",)

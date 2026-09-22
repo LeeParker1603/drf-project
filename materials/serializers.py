@@ -5,7 +5,9 @@ from materials.validators import validate_youtube_link
 
 class LessonSerializer(serializers.ModelSerializer):
     # Добавляем валидатор на поле видео
-    video_link = serializers.CharField(validators=[validate_youtube_link], required=False, allow_blank=True)
+    video_url = serializers.CharField(
+        validators=[validate_youtube_link], required=False, allow_blank=True
+    )
 
     class Meta:
         model = Lesson
@@ -20,13 +22,13 @@ class CourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'preview', 'description', 'lessons_count', 'lessons']
+        fields = ["id", "title", "preview", "description", "lessons_count", "lessons"]
 
     def get_lessons_count(self, obj):
         return obj.lessons.count()  # Считаем количество уроков, связанных с курсом
 
     def get_is_subscribed(self, obj):
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request and request.user.is_authenticated:
             return Subscription.objects.filter(user=request.user, course=obj).exists()
         return False
