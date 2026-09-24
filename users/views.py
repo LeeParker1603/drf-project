@@ -1,13 +1,19 @@
 from django.urls import reverse
-from rest_framework import generics
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics
 from rest_framework.filters import OrderingFilter
-from users.models import Payment, User
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
+from users.models import Payment, User
 from users.permissions import IsProfileOwner
-from users.serializers import PaymentSerializer, UserSerializer, UserRegisterSerializer
-from users.services import create_stripe_product, create_stripe_price, create_stripe_session, retrieve_stripe_session_status
+from users.serializers import PaymentSerializer, UserRegisterSerializer, UserSerializer
+from users.services import (
+    create_stripe_price,
+    create_stripe_product,
+    create_stripe_session,
+    retrieve_stripe_session_status,
+)
 
 
 class UserRegisterAPIView(generics.CreateAPIView):
@@ -34,6 +40,7 @@ class UserUpdateAPIView(generics.RetrieveUpdateAPIView):
 
 class PaymentCreateAPIView(generics.CreateAPIView):
     """Эндпоинт инициализации платежа за курс или урок"""
+
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     permission_classes = [IsAuthenticated]
@@ -46,31 +53,33 @@ class PaymentCreateAPIView(generics.CreateAPIView):
         paid_item = payment.paid_course if payment.paid_course else payment.paid_lesson
 
         # 1. Создаем продукт в Stripe
-        stripe_product_id = create_stripe_product(name=paid_item.title, description=paid_item.description)
+        stripe_product_id = create_stripe_product(
+            name=paid_item.title, description=paid_item.description
+        )
 
         # 2. Создаем цену в копейках
-        stripe_price_id = create_stripe_price(product_id=stripe_product_id, amount=payment.amount)
+        stripe_price_id = create_stripe_price(
+            product_id=stripe_product_id, amount=payment.amount
+        )
 
         # 3. Генерируем сессию оплаты
         if payment.paid_course:
             success_url = self.request.build_absolute_uri(
-                reverse('materials:course-detail',
-                        kwargs={'pk': payment.paid_course.id})
+                reverse(
+                    "materials:course-detail", kwargs={"pk": payment.paid_course.id}
+                )
             )
         else:
             success_url = self.request.build_absolute_uri(
-                reverse('materials:lesson-get',
-                        kwargs={'pk': payment.paid_lesson.id})
+                reverse("materials:lesson-get", kwargs={"pk": payment.paid_lesson.id})
             )
 
         cancel_url = self.request.build_absolute_uri(
-            reverse('users:payment-status', kwargs={'pk': payment.id})
+            reverse("users:payment-status", kwargs={"pk": payment.id})
         )
 
         session_id, payment_url = create_stripe_session(
-            price_id=stripe_price_id,
-            success_url=success_url,
-            cancel_url=cancel_url
+            price_id=stripe_price_id, success_url=success_url, cancel_url=cancel_url
         )
 
         # 4. Сохраняем полученные данные платежной сессии в нашу БД
@@ -78,11 +87,13 @@ class PaymentCreateAPIView(generics.CreateAPIView):
         payment.payment_link = payment_url
         payment.save()
 
+
 # =========================================================================
 # Контроллер синхронизации и проверки статуса
 # =========================================================================
 class PaymentStatusRetrieveAPIView(generics.RetrieveAPIView):
     """Эндпоинт для ручной или автоматической проверки актуального статуса платежа"""
+
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     permission_classes = [IsAuthenticated]
