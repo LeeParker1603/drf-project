@@ -1,12 +1,14 @@
-from rest_framework import viewsets, generics
-from rest_framework.permissions import IsAuthenticated
-from materials.models import Course, Lesson, Subscription
-from materials.serializers import CourseSerializer, LessonSerializer
-from materials.permissions import IsModerator, IsOwner
 from django.shortcuts import get_object_or_404
-from rest_framework.views import APIView
+from rest_framework import generics, viewsets
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from materials.models import Course, Lesson, Subscription
 from materials.paginators import CustomPagination
+from materials.permissions import IsModerator, IsOwner
+from materials.serializers import CourseSerializer, LessonSerializer
+from materials.tasks import send_course_update_email
 
 
 # CRUD для курсов через Viewset
@@ -32,6 +34,12 @@ class CourseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Автоматически сохраняем создателя курса
         serializer.save(owner=self.request.user)
+
+    def perform_update(self, serializer):
+        # Сохраняем изменения курса
+        course = serializer.save()
+        # Запускаем фоновую задачу Celery, передавая ID курса
+        send_course_update_email.delay(course.id)
 
 
 # CRUD для уроков через Generic-классы

@@ -1,9 +1,10 @@
 from django.contrib.auth.models import (
     AbstractBaseUser,
-    PermissionsMixin,
     BaseUserManager,
+    PermissionsMixin,
 )
 from django.db import models
+
 from config import settings
 from materials.models import Course, Lesson
 
@@ -92,14 +93,15 @@ class Payment(models.Model):
         verbose_name="Способ оплаты",
     )
 
-    stripe_session_id = models.CharField(max_length=255,
-                                         verbose_name="ID сессии Stripe",
-                                         blank=True, null=True)
-    payment_link = models.URLField(max_length=400,
-                                   verbose_name="Ссылка на оплату", blank=True,
-                                   null=True)
-    payment_status = models.CharField(max_length=50, default="unpaid",
-                                      verbose_name="Статус платежа")
+    stripe_session_id = models.CharField(
+        max_length=255, verbose_name="ID сессии Stripe", blank=True, null=True
+    )
+    payment_link = models.URLField(
+        max_length=400, verbose_name="Ссылка на оплату", blank=True, null=True
+    )
+    payment_status = models.CharField(
+        max_length=50, default="unpaid", verbose_name="Статус платежа"
+    )
 
     class Meta:
         verbose_name = "Платеж"

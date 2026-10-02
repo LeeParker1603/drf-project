@@ -1,6 +1,24 @@
 import os
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
+
+# 1. ГЛОБАЛЬНЫЙ ПАТЧ: Отключаем RESP3/HELLO и уведомления об обслуживании для старого Redis на Windows
+from redis.connection import Connection
+
+# Отключаем проверку уведомлений об обслуживании, которая вызывает RedisError
+Connection._configure_maintenance_notifications = lambda *args, **kwargs: None
+
+# Перехватываем инициализацию соединения и принудительно задаем протокол RESP2
+original_init = Connection.__init__
+
+
+def patched_init(self, *args, **kwargs):
+    kwargs["protocol"] = 2  # Блокирует команду HELLO
+    original_init(self, *args, **kwargs)
+
+
+Connection.__init__ = patched_init
+
 
 from dotenv import load_dotenv
 
@@ -30,6 +48,7 @@ INSTALLED_APPS = [
     "users",
     "materials",
     "django_filters",
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -132,16 +151,52 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "UPDATE_LAST_LOGIN": True,
 }
 
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'LMS API Documentation',
-    'DESCRIPTION': 'Документация для системы управления обучением (LMS) с интеграцией Stripe',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
+    "TITLE": "LMS API Documentation",
+    "DESCRIPTION": "Документация для системы управления обучением (LMS) с интеграцией Stripe",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_TIMEZONE = TIME_ZONE
+
+# Настройки Celery (читаем из .env через ваш настроенный env)
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_REDIS_BACKEND_TRANSPORT_OPTIONS = {
+    'protocol': 2
+}
+
+# Настройки почты
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = os.getenv("EMAIL_PORT")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Периодические задачи Celery Beat
+CELERY_BEAT_SCHEDULE = {
+    "check_inactive_users_daily": {
+        "task": "users.tasks.block_inactive_users",
+        "schedule": timedelta(days=1),  # Проверка раз в сутки
+    },
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+    }
+}
