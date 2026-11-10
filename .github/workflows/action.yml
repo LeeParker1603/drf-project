@@ -107,5 +107,5 @@ jobs:
             echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env
 
             # Перезапускаем наши контейнеры в Docker одной командой
-            docker compose down
+            docker compose down -v
             docker compose up -d --build
