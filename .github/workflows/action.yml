@@ -25,6 +25,10 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run tests
+        env:
+          SECRET_KEY: 'test_secret_key_for_ci_pipeline'
+          DEBUG: 'True'
+          STRIPE_SECRET_KEY: 'test_stripe_key'
         run: |
           python manage.py test
 
