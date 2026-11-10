@@ -2,9 +2,9 @@ name: Django CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, feature/homework_35_2 ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, feature/homework_35_2 ]
 
 jobs:
   # 1. Этап ТЕСТЫ (как требует задание)
@@ -73,8 +73,8 @@ jobs:
             if [ ! -d ".git" ]; then
               git clone https://github.com/LeeParker1603/drf-project .
             else
-              git checkout develop
-              git pull origin develop
+              git checkout feature/homework_35_2
+              git pull origin feature/homework_35_2
             fi
 
             # Динамически собираем безопасный .env файл из секретов GitHub на сервере
