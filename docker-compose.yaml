@@ -7,6 +7,10 @@ services:
     restart: always
     env_file:
       - .env
+    environment:
+      POSTGRES_DB: ${NAME}
+      POSTGRES_USER: ${USER}
+      POSTGRES_PASSWORD: ${PASSWORD}
     volumes:
       - pg_data:/var/lib/postgresql/data
     expose:
