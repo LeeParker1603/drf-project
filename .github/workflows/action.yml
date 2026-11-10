@@ -84,27 +84,34 @@ jobs:
               git reset --hard origin/feature/homework_35_2
             fi
 
-            # Динамически собираем безопасный .env файл из секретов GitHub на сервере
-            echo "SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" >> .env
-            echo "DEBUG=False" >> .env
-            echo "ALLOWED_HOSTS='*'" >> .env
-            echo "HOST=db" >> .env
-            echo "NAME=${{ secrets.DB_NAME }}" >> .env
-            echo "USER=${{ secrets.DB_USER }}" >> .env
-            echo "PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-            echo "PORT=5432" >> .env
-            echo "CELERY_BROKER_URL=redis://redis:6379/0" >> .env
-            echo "CELERY_RESULT_BACKEND=redis://redis:6379/0" >> .env
+            # Собираем .env, где есть имена и для Django, и для самой базы PostgreSQL
+            cat << 'EOF' > .env
+            SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+            DEBUG=False
+            ALLOWED_HOSTS=158.160.132.249,localhost,127.0.0.1
+            HOST=db
+            PORT=5432
             
-            # Настройки почты (нечувствительные — пишем текстом, пароль — из секретов)
-            echo "EMAIL_HOST=://gmail.com" >> .env
-            echo "EMAIL_PORT=587" >> .env
-            echo "EMAIL_USE_TLS=True" >> .env
-            echo "EMAIL_HOST_USER=your_email@gmail.com" >> .env
-            echo "EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}" >> .env
+            # Переменные, которые считает Django в settings.py
+            NAME=${{ secrets.DB_NAME }}
+            USER=${{ secrets.DB_USER }}
+            PASSWORD=${{ secrets.DB_PASSWORD }}
             
-            # Интеграция Stripe (из секретов)
-            echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env
+            # Переменные, которые считает сам контейнер PostgreSQL при старте
+            POSTGRES_DB=${{ secrets.DB_NAME }}
+            POSTGRES_USER=${{ secrets.DB_USER }}
+            POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
+            
+            # Остальные настройки проекта
+            CELERY_BROKER_URL=redis://redis:6379/0
+            CELERY_RESULT_BACKEND=redis://redis:6379/0
+            EMAIL_HOST=://gmail.com
+            EMAIL_PORT=587
+            EMAIL_USE_TLS=True
+            EMAIL_HOST_USER=your_email@gmail.com
+            EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}
+            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+            EOF
 
             # Перезапускаем наши контейнеры в Docker одной командой
             docker compose down -v
