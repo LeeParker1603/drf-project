@@ -10,6 +10,7 @@ from celery.utils.log import get_task_logger
 
 logger = get_task_logger(__name__)
 
+
 @shared_task
 def send_course_update_email(course_id):
     """
@@ -44,6 +45,3 @@ def send_course_update_email(course_id):
             recipient_list=recipient_list,
             fail_silently=False,
         )
-
-
-

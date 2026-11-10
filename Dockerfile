@@ -24,8 +24,12 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Копируем весь остальной код проекта
 COPY . .
 
-# Создаем папку для медиафайлов из вашего примера
-RUN mkdir -p /app/media
+# Создаем папки для статических и медиафайлов, даем права
+RUN mkdir -p /app/staticfiles && chmod -R 755 /app/staticfiles
+RUN mkdir -p /app/media && chmod -R 755 /app/media
 
-# Документируем порт приложения (критерий: использование expose для веб-сервиса внутри сети)
+# Документируем порт приложения
 EXPOSE 8000
+
+# собираем статику и включаем промышленный сервер
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000"]

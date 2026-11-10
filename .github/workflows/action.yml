@@ -1,0 +1,118 @@
+name: Django CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, feature/homework_35_2 ]
+  pull_request:
+    branches: [ main, develop, feature/homework_35_2 ]
+
+jobs:
+  # 1. Этап ТЕСТЫ (как требует задание)
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        env:
+          SECRET_KEY: 'test_secret_key_for_ci_pipeline'
+          DEBUG: 'True'
+          STRIPE_SECRET_KEY: 'test_stripe_key'
+        run: |
+          python manage.py test
+
+  # 2. Этап ЛИНТ (запускается ТОЛЬКО после успешных тестов)
+  lint:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install linter
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Run Flake8
+        run: flake8 .
+
+  # 3. Этап БИЛД и ДЕПЛОЙ (запускается ТОЛЬКО если тесты и линт прошли успешно)
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    if: github.event_name == 'push' # Деплой делаем только при push, а не при проверке PR
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Remote Server via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Переходим в рабочую папку проекта на сервере
+            mkdir -p /home/ubuntu/drf-project
+            cd /home/ubuntu/drf-project
+            
+            # Если проекта еще нет на сервере — клонируем, если есть — подтягиваем изменения
+            if [ ! -d ".git" ]; then
+              rm -f .env
+              git clone https://github.com/LeeParker1603/drf-project .
+              git checkout feature/homework_35_2
+            else
+              git fetch --all
+              git checkout feature/homework_35_2
+              git reset --hard origin/feature/homework_35_2
+            fi
+
+            # Собираем .env, где есть имена и для Django, и для самой базы PostgreSQL
+            cat << 'EOF' > .env
+            SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+            DEBUG=False
+            ALLOWED_HOSTS=158.160.132.249,localhost,127.0.0.1
+            HOST=db
+            PORT=5432
+            
+            # Переменные, которые считает Django в settings.py
+            NAME=${{ secrets.DB_NAME }}
+            USER=${{ secrets.DB_USER }}
+            PASSWORD=${{ secrets.DB_PASSWORD }}
+            
+            # Переменные, которые считает сам контейнер PostgreSQL при старте
+            POSTGRES_DB=${{ secrets.DB_NAME }}
+            POSTGRES_USER=${{ secrets.DB_USER }}
+            POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
+            
+            # Остальные настройки проекта
+            CELERY_BROKER_URL=redis://redis:6379/0
+            CELERY_RESULT_BACKEND=redis://redis:6379/0
+            EMAIL_HOST=://gmail.com
+            EMAIL_PORT=587
+            EMAIL_USE_TLS=True
+            EMAIL_HOST_USER=your_email@gmail.com
+            EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}
+            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+            EOF
+
+            # Перезапускаем наши контейнеры в Docker одной командой
+            docker compose down -v
+            docker compose up -d --build
