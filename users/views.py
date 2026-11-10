@@ -22,7 +22,7 @@ class UserRegisterAPIView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
-        user = serializer.save(is_active=True)
+        _ = serializer.save(is_active=True)
 
 
 class UserUpdateAPIView(generics.RetrieveUpdateAPIView):

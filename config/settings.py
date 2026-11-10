@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import timedelta
+from dotenv import load_dotenv
 from pathlib import Path
 
 # 1. ГЛОБАЛЬНЫЙ ПАТЧ: Отключаем RESP3/HELLO и уведомления об обслуживании для старого Redis на Windows
@@ -20,8 +21,6 @@ def patched_init(self, *args, **kwargs):
 
 Connection.__init__ = patched_init
 
-
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -174,9 +173,7 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
-CELERY_REDIS_BACKEND_TRANSPORT_OPTIONS = {
-    'protocol': 2
-}
+CELERY_REDIS_BACKEND_TRANSPORT_OPTIONS = {"protocol": 2}
 
 # Настройки почты
 EMAIL_HOST = os.getenv("EMAIL_HOST")
@@ -185,7 +182,7 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS")
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Периодические задачи Celery Beat
 CELERY_BEAT_SCHEDULE = {
@@ -203,10 +200,10 @@ CACHES = {
 }
 
 
-if 'test' in sys.argv:
+if "test" in sys.argv:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'test_db.sqlite3',
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "test_db.sqlite3",
         }
     }
